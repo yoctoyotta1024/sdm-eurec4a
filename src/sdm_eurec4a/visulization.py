@@ -1074,7 +1074,8 @@ def plot_one_one(ax: mpl_axes.Axes, N: int = 100, **kwargs: dict):
         np.nanmax([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
         N,
     )
-    ax.plot(lims, lims, **kwargs)
+    lines = ax.plot(lims, lims, **kwargs)
+    return lines
 
 
 def save_figure(

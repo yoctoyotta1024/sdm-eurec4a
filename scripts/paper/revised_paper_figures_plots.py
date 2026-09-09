@@ -304,34 +304,31 @@ def plot_4_all(identified_clusters,
     x_fitted = ds_fitted_cloud["radius"] * 1e6
 
     # plot observed and fitted PSD
-    ax_psd.plot(
+    l1_psd = ax_psd.plot(
         x_observed,
         y_observed,
         linestyle="",
         marker=".",
         markersize=2,
         color=[0.5, 0.5, 0.5],
-        alpha=0.3,
+        alpha=0.5,
     )
-    ax_psd.plot(
+    l2_psd = ax_psd.plot(
         x_observed,
         y_observed.mean("time"),
         linestyle="",
         linewidth=1,
-        marker=".",
-        markersize=4,
+        marker="D",
+        markersize=2,
         color=[0.3, 0.3, 0.3],
         alpha=0.75,
-        label="Mean. Obs.",
     )
-
-    ax_psd.plot(
+    l3_psd = ax_psd.plot(
         x_fitted,
         y_fitted.T,
         linestyle="-",
         color=[0.1, 0.1, 0.1],
         lw=2,
-        label="Fit",
     )
 
     ax_psd.set_xscale("log")
@@ -339,6 +336,10 @@ def plot_4_all(identified_clusters,
     ax_psd.set_ylim(-0.5, 1e13)
     ax_psd.set_xlabel(r"Radius $[\mu m]$")
     ax_psd.set_ylabel(r"Number Concentration $[m^{-3} m^{-1}]$")
+
+    psd_handles = [l1_psd[0], l2_psd[0], l3_psd[0]]
+    psd_labels = ["raw", "mean", "fit"]
+    ax_psd.legend(loc="upper right", handles=psd_handles, labels=psd_labels)
 
     # ----------------------
     # Liquid Water Content
@@ -362,7 +363,6 @@ def plot_4_all(identified_clusters,
         alpha=0.75,
         # label = f"Pearson correlation coefficient: {corr.values:.2f}"
     )
-
     ax_lwc.errorbar(
         x=x,
         y=y,
@@ -381,7 +381,8 @@ def plot_4_all(identified_clusters,
     ax_lwc.set_xlim(lim)
     ax_lwc.set_ylim(lim)
 
-    plot_one_one(ax_lwc, color="grey", linestyle="-")
+    l1_lwc = plot_one_one(ax_lwc, color="grey", linestyle="-")
+    ax_lwc.legend(labels=["1:1 line"], handles=l1_lwc, loc=(0.575, -0.01), framealpha=0.0)
     ax_lwc.set_xlabel(label_from_attrs(x, name_width=25))
     ax_lwc.set_ylabel(label_from_attrs(y, name_width=20))
     # ax.legend(loc="upper left")
@@ -410,14 +411,14 @@ def plot_4_all(identified_clusters,
     x_fitted = da_potential_temperature.sel(cloud_id=cloud_id)
     y_fitted = da_pressure["altitude"]
 
-    ax_pt.plot(
+    l1_pt = ax_pt.plot(
         x_observed,
         y_observed,
-        linestyle="-",
+        linestyle="--",
         color=default_colors[0],
         alpha=0.3,
     )
-    ax_pt.plot(
+    l2_pt = ax_pt.plot(
         x_observed.mean("time"),
         y_observed,
         linestyle="-",
@@ -426,8 +427,7 @@ def plot_4_all(identified_clusters,
         lw=1,
         label="Mean. Obs.",
     )
-
-    ax_pt.plot(
+    l3_pt = ax_pt.plot(
         x_fitted.T,
         y_fitted.T,
         linestyle="-",
@@ -436,8 +436,14 @@ def plot_4_all(identified_clusters,
         label="Fit",
     )
 
+    ax_pt.set_xticks(np.arange(296, 302, 2))
+
     ax_pt.set_xlabel(r"Potential Temperature $[K]$")
     ax_pt.set_ylabel(r"Altitude $[m]$")
+    pt_handles = [l1_pt[0], l2_pt[0], l3_pt[0]]
+    pt_labels = ["raw", "mean", "fit"]
+    ax_pt.legend(loc="lower right", handles=pt_handles, labels=pt_labels)
+
 
     # ----------------------
     # RELATIVE HUMIDITY
@@ -456,14 +462,14 @@ def plot_4_all(identified_clusters,
     x_fitted = da_relative_humidity.sel(cloud_id=cloud_id)
     y_fitted = da_relative_humidity["altitude"]
 
-    ax_rh.plot(
+    l1_rh = ax_rh.plot(
         x_observed,
         y_observed,
-        linestyle="-",
+        linestyle="--",
         color=default_colors[1],
         alpha=0.3,
     )
-    ax_rh.plot(
+    l2_rh = ax_rh.plot(
         x_observed.mean("time"),
         y_observed,
         linestyle="-",
@@ -472,7 +478,7 @@ def plot_4_all(identified_clusters,
         lw=1,
         label="Mean. Obs.",
     )
-    ax_rh.plot(
+    l3_rh = ax_rh.plot(
         x_fitted.T,
         y_fitted.T,
         linestyle="-",
@@ -481,10 +487,11 @@ def plot_4_all(identified_clusters,
         label="Fit",
     )
 
-    yticks = ax_pt.get_yticks()
-    ax_pt.set_xticks(np.arange(296, 302, 2))
-
     ax_rh.set_xlabel(r"Relative Humidity $[\%]$")
+    rh_handles = [l1_rh[0], l2_rh[0], l3_rh[0]]
+    rh_labels = ["raw", "mean", "fit"]
+    ax_rh.legend(loc="lower right", handles=rh_handles, labels=rh_labels)
+
 
     for _ax in [ax_pt, ax_rh]:
         _ax.axhline(
@@ -495,8 +502,6 @@ def plot_4_all(identified_clusters,
         _ax.axhline(ds_observed_cloud["altitude"].mean("time").data, color="k", linestyle=":")
         _ax.set_yticks(np.arange(0, 1250, 400))
         _ax.set_ylim(0, 1200)
-
-    ax_psd.legend(loc="lower left")
 
     ax_psd.set_title(f"Measurements {len(ds_observed_cloud['time'].data)}")
     ax_pt.set_title(f"Measurements {len(ds_dropsonde_cloud['time'].data)}")
@@ -636,11 +641,6 @@ def plot_figure_1(cloud_composite,
         zorder=10,
     )
 
-    for key in axs:
-        try:
-            axs[key].get_legend().remove()
-        except AttributeError:
-            pass
 
     for _ax in [axs["ax_pt"], axs["ax_rh"]]:
         xlim = _ax.get_xlim()
@@ -1291,11 +1291,25 @@ def plot_figure_6(ds, microphysics_styles):
     return fig
 
 def plot_figure_7(ds, ds_correlations_EF, ds_correlations_CIE, ds_correlations_MEH, microphysics_styles):
-    fig, axs = plt.subplots(ncols=3, figsize=wide_fig_size)
+    fig, axs = plt.subplots(ncols=2, figsize=small_fig_size, layout="constrained")
+    #fig, axs = plt.subplots(ncols=3, figsize=wide_fig_size, layout="constrained")
 
     axs_ef: plt.Axes = axs[1]
     axs_cie: plt.Axes = axs[0]
-    axs_meh: plt.Axes = axs[2]
+    # axs_meh: plt.Axes = axs[2]
+
+    x_cie = "inflow_energy"  # "cloud_liquid_water_content"
+    y = -ds["source_energy"].sel(microphysics="condensation")
+    x = ds[x_cie].sel(microphysics="condensation")
+    correlation = ds_correlations_CIE[x.name].sel(microphysics="condensation")
+    axs_cie.set_title(f" R = {correlation.data:.2f}")
+    axs_cie.scatter(
+        x,
+        y,
+        **microphysics_styles.get_style("condensation"),
+    )
+    axs_cie.set_xlabel(label_from_attrs(x, name_width=20))
+    axs_cie.set_ylabel(label_from_attrs(y, name_width=20))
 
     y = ds["evaporation_fraction"].sel(microphysics="condensation")
     x = ds["cloud_mass_radius_mean"].sel(microphysics="condensation")
@@ -1309,33 +1323,19 @@ def plot_figure_7(ds, ds_correlations_EF, ds_correlations_CIE, ds_correlations_M
     axs_ef.set_xlabel(label_from_attrs(x, name_width=20))
     axs_ef.set_ylabel(label_from_attrs(y, name_width=20))
 
-    y = -ds["source_energy"].sel(microphysics="condensation")
-    x = ds["inflow_energy"].sel(microphysics="condensation")
-    correlation = ds_correlations_CIE[x.name].sel(microphysics="condensation")
-    axs_cie.set_title(f" R = {correlation.data:.2f}")
-    axs_cie.scatter(
-        x,
-        y,
-        **microphysics_styles.get_style("condensation"),
-    )
-    axs_cie.set_xlabel(label_from_attrs(x, name_width=20))
-    axs_cie.set_ylabel(label_from_attrs(y, name_width=20))
-
-    y = ds["mean_evaporation_height"].sel(microphysics="condensation")
-    x = ds["cloud_mass_radius_mean"].sel(microphysics="condensation")
-    correlation = ds_correlations_MEH[x.name].sel(microphysics="condensation")
-    axs_meh.set_title(f" R = {correlation.data:.2f}")
-    axs_meh.scatter(
-        x,
-        y,
-        **microphysics_styles.get_style("condensation"),
-    )
-    axs_meh.set_xlabel(label_from_attrs(x, name_width=20))
-    axs_meh.set_ylabel(label_from_attrs(y, name_width=20))
+    # y = ds["mean_evaporation_height"].sel(microphysics="condensation")
+    # x = ds["cloud_mass_radius_mean"].sel(microphysics="condensation")
+    # correlation = ds_correlations_MEH[x.name].sel(microphysics="condensation")
+    # axs_meh.set_title(f" R = {correlation.data:.2f}")
+    # axs_meh.scatter(
+    #     x,
+    #     y,
+    #     **microphysics_styles.get_style("condensation"),
+    # )
+    # axs_meh.set_xlabel(label_from_attrs(x, name_width=20))
+    # axs_meh.set_ylabel(label_from_attrs(y, name_width=20))
 
     add_subplotlabel(axs=axs, location="upper left")
-
-    fig.tight_layout()
 
     return fig
 
@@ -1488,8 +1488,18 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
 
     y_ticks = [0, 0.5, 1]
 
-    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(5, 5), sharey=True)
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=5,
+        figsize=[wide_fig_size[0] * 1.2, wide_fig_size[1]],
+        sharey=True,
+        width_ratios=[1, 0.1, 1, 0.2, 2],
+        layout="constrained"
+    )
 
+    axs = [axes[0], axes[2], axes[4]]
+    axes[1].remove()
+    axes[3].remove()
 
     plot_microphysics = [
         "collision_condensation",
@@ -1558,14 +1568,14 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
 
     for _ax in [axs[0], axs[1]]:
         _ax.set_xlim(-15, 15)
-    axs[2].set_xlim(-15, 150)
+    axs[2].set_xlim(-15, 160)
 
-    fig.supxlabel(label_from_attrs(x, name_width=40))
-    fig.supylabel(label_from_attrs(y))
+    axs[1].set_xlabel(label_from_attrs(x, name_width=40))
+    axs[0].set_ylabel(label_from_attrs(y))
 
-    add_subplotlabel(axs=list(axs))
+    # add_subplotlabel(axs=list(axs))
 
-    fig.tight_layout()
+    axs[0].legend(loc=(0.6, 0.0), fontsize=10)
 
     return fig
 
@@ -1757,6 +1767,7 @@ def plot_figure_appdx_1(ds, ds_sem, microphysics_styles):
             histtype="step",
             color=style["color"],
             lw=2,
+            label=microphysics_styles.get_setup(mp)["name"],
         )
         ax_y_hist.hist(
             y.sel(microphysics=mp),
@@ -1819,6 +1830,8 @@ def plot_figure_appdx_1(ds, ds_sem, microphysics_styles):
         _ax.grid(linestyle="-", alpha=0.2, color="grey")
 
     add_subplotlabel([ax_scatter, ax_x_hist, ax_y_hist], location="title")
+
+    ax_x_hist.legend(loc=(1.05, 0.0))
 
     return fig
 
