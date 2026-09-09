@@ -6,7 +6,7 @@ This document explains the steps required to run the EURCE4A-SDM pipeline with C
 - [Observational data and fittings](#observational-data-and-fittings)
 - [Running CLEO based on Observational Fits](#running-cleo-based-on-observational-fits)
 - [Post Processing of CLEOs Raw Output](#post-processing-of-cleos-raw-output)
-- [Plot and Use the Conservation and Eulerian Views](#plot-and-use-the-conservation-and-eulerian-views) (currently work-in-progress)
+- [Plot and Use CLEO Datasets](#plot-and-use-cleo-datasets)
 
 ---
 
@@ -550,7 +550,9 @@ and the combined dataset is stored in ``/your/path2data/output_[version_output]/
 
 ---
 
-# Plot and Use CLEO Datasets and Conservation and Eulerian Views' Datasets
+# Plot and Use CLEO Datasets
+
+You may first need to post-process to get the DSD datasets, and the Conservation and Eulerian Views' Datasets
 
 To plot specific figures from the original manuscript submission:
 - S: ``./notebooks/paper/17-NN-figure-review-version.ipynb``
