@@ -1154,7 +1154,7 @@ def plot_figure_5(ds, ds_normalized, microphysics_styles):
     ax.set_ylim(0, 1)
 
     ax.set_xlabel(label_from_attrs(x))
-    ax.set_ylabel(label_from_attrs(y, return_units=False, name_width=25))
+    ax.set_ylabel(label_from_attrs(y, return_units=False, name_width=25)+" [-]")
 
     fig.colorbar(sc, ax=ax, label=label_from_attrs(c, name_width=20, linebreak=True))
 
@@ -1162,7 +1162,7 @@ def plot_figure_5(ds, ds_normalized, microphysics_styles):
 
     return fig
 
-def plot_figure_6(ds, microphysics_styles):
+def plot_figure_6(ds, ds_correlations_CIE, microphysics_styles):
     def plot_subfigure(ax):
 
         x = ds["inflow_energy"]
@@ -1267,6 +1267,8 @@ def plot_figure_6(ds, microphysics_styles):
     xlim = np.array(ax0.get_xlim())
     ylim = np.array(ax0.get_ylim())
     ax0 = plot_isolines(ax0, xlim, ylim)
+    correlation = ds_correlations_CIE["inflow_precipitation"].sel(microphysics="condensation")
+    ax0.text(0.15, 300, r"$R$" + f"={correlation.data:.2f}")
     ax0 = add_second_axis(ax0, x, y)
 
     ax1, x, y = plot_subfigure(axs[1])
@@ -1285,6 +1287,8 @@ def plot_figure_6(ds, microphysics_styles):
     add_zoom_box(ax1,
                  [ax1.get_xlim()[0]*1.025, ax1.get_xlim()[1]*0.975],
                  [ax1.get_ylim()[0]*1.025, ax1.get_ylim()[1]*0.975])
+
+    add_subplotlabel(axs=[ax0, ax1], location=[[-0.15, 0.0], [1.125, 0.0]])
 
     fig.tight_layout()
 
@@ -1386,7 +1390,7 @@ def plot_figure_8(ds_normalized):
         plot_hexbin(ax, x, y, w, xscale=xscale, vmax=vmax, cbar=cbar)
 
         if k == 0:
-            ax.set_ylabel("Normalized height []") 
+            ax.set_ylabel("Normalized height [-]") 
         ax.set_xlabel(label)
 
         fig.tight_layout()
@@ -1401,10 +1405,12 @@ def plot_figure_8(ds_normalized):
 
     fig.tight_layout()
 
+    add_subplotlabel(axs=list(axs), location="upper left")
+
     return fig
 
 def plot_figure_9(ds, ds_no_ventilation, evaporation_fraction_ventilation, evaporation_fraction, microphysics_styles):
-    fig, ax = plt.subplots(1, 1)
+    fig, ax = plt.subplots(1, 1, figsize=[small_fig_size[0]*1.05, small_fig_size[1]])
 
     x = ds["cloud_mass_radius_mean"]
     y = ds["evaporation_fraction"]
@@ -1414,14 +1420,14 @@ def plot_figure_9(ds, ds_no_ventilation, evaporation_fraction_ventilation, evapo
 
     for mp in ["condensation"]:
         style = microphysics_styles.get_style(mp)
-        style["label"] += r" $\mathbf{with} \, f_v$"
+        style["label"] += r" with $f_v$"
         ax.scatter(
             x.sel(microphysics=mp),
             y.sel(microphysics=mp),
             **style,
         )
         style = microphysics_styles.get_style(mp, colortype="light")
-        style["label"] += r" $\mathbf{without} \, f_v$"
+        style["label"] += r" without $f_v$"
         style["color"] = "grey"
         style["marker"] = "."
         ax.scatter(
@@ -1433,7 +1439,7 @@ def plot_figure_9(ds, ds_no_ventilation, evaporation_fraction_ventilation, evapo
     ax.plot(
         ds["radius_bins"],
         1e2 * evaporation_fraction_ventilation,
-        label=r"Theory $\mathbf{with} \, f_v$",
+        label=r"Theory with $f_v$ ~ $r^{-7/4}_0$",
         color="black",
         linestyle="--",
     )
@@ -1441,7 +1447,7 @@ def plot_figure_9(ds, ds_no_ventilation, evaporation_fraction_ventilation, evapo
     ax.plot(
         ds["radius_bins"],
         1e2 * evaporation_fraction,
-        label=r"Theory $\mathbf{without} \, f_v$",
+        label=r"Theory without $f_v$ ~ $r^{-5/2}_0$",
         color="grey",
         linestyle="--",
     )
@@ -1452,7 +1458,7 @@ def plot_figure_9(ds, ds_no_ventilation, evaporation_fraction_ventilation, evapo
     ax.set_yscale("log")
     ax.set_xlabel(label_from_attrs(x))
     ax.set_ylabel(label_from_attrs(y))
-    ax.legend(loc="lower left")
+    ax.legend(loc="lower left", fontsize=11, framealpha=0.0)
 
     fig.tight_layout()
 
@@ -1507,7 +1513,8 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
         "coalbure_condensation_large",
     ]
 
-    for _ax, mp in zip(axs, plot_microphysics):
+    subplot_label = ["(a) ", "(b) ", "(c) "]
+    for _ax, mp, slab in zip(axs, plot_microphysics, subplot_label):
 
         _x = x.sel(microphysics=mp)
         _x_std = x_sem.sel(microphysics=mp)
@@ -1516,7 +1523,7 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
 
         style_full = microphysics_styles[mp].copy()
 
-        _ax.set_title(microphysics_styles.get_setup(mp)["name"])
+        _ax.set_title(slab+microphysics_styles.get_setup(mp)["name"], loc="left")
 
         _ax.plot(
             md_mean,
@@ -1571,7 +1578,7 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
     axs[2].set_xlim(-15, 160)
 
     axs[1].set_xlabel(label_from_attrs(x, name_width=40))
-    axs[0].set_ylabel(label_from_attrs(y))
+    axs[0].set_ylabel(label_from_attrs(y, return_units=False)+" [-]")
 
     # add_subplotlabel(axs=list(axs))
 
@@ -1580,7 +1587,7 @@ def plot_figure_10(ds_normalized, ds_normalized_sem, microphysics_styles):
     return fig
 
 def plot_figure_11(ds, microphysics_styles):
-    def plot_relative_differences(
+    def plot_differences(
         ax: plt.Axes,
         ds: xr.Dataset,
         x_var_name: str,
@@ -1590,6 +1597,7 @@ def plot_figure_11(ds, microphysics_styles):
             "coalbure_condensation_small",
             "coalbure_condensation_large",
         ],
+        do_relative: bool = False,
     ):
         x = ds[x_var_name]
         if x_var_name == "inflow_energy":
@@ -1598,11 +1606,15 @@ def plot_figure_11(ds, microphysics_styles):
         y_all = ds[y_var_name]
         y_refernce = y_all.sel(microphysics="condensation")
         attrs = y_all.attrs.copy()
-        y = (y_all - y_refernce) / y_refernce * 100
+        y = (y_all - y_refernce)
+        if do_relative:
+            long_name = f"{attrs['long_name']} relative difference"
+            y = y / y_refernce * 100
+        else:
+            long_name = f"{attrs['long_name']} absolute difference"
 
         y.attrs.update(
-            # long_name=f"{attrs['long_name']} relative difference to {microphysics_styles['condensation']['name']}",
-            long_name=f"{attrs['long_name']} relative difference",
+            long_name=long_name,
             units=r"\%",
         )
 
@@ -1635,13 +1647,15 @@ def plot_figure_11(ds, microphysics_styles):
     ]
 
     fig, axs = plt.subplots(nrows=2, ncols=2, figsize=large_fig_size * 1.2)
+    axes = axs.flatten()
 
-    for _ax, (_x, _y) in zip(
-        axs.flatten(),
-        variable_combinations,
-    ):
-        _ax = plot_relative_differences(
-            ax=_ax,
+    for a, (_x, _y) in enumerate(variable_combinations):
+        if a < 2:
+            do_relative = True
+        else:
+            do_relative = False
+        plot_differences(
+            ax=axes[a],
             ds=ds,
             x_var_name=_x,
             y_var_name=_y,
@@ -1650,6 +1664,7 @@ def plot_figure_11(ds, microphysics_styles):
                 "collision_condensation",
                 "coalbure_condensation_small",
             ],
+            do_relative=do_relative,
         )
 
     # remove repeated labels
@@ -1661,14 +1676,16 @@ def plot_figure_11(ds, microphysics_styles):
     for _ax in axs.flatten():
         _ax.set_xscale("log")
 
-    axs[0,0].legend(loc="upper left")
+    axs[0,0].legend(loc=(-0.007, 0.4), framealpha=0.0)
 
-    for _ax in [axs[0,0], axs[1,0]]:
-        _ax.set_ylim(-25, 800)
+    axs[0,0].set_ylim(-25, 800)
+    axs[0,1].set_ylim(-25, 100)
+    axs[0,1].set_xlim(left=1e-1)
 
-    for _ax in [axs[0,1], axs[1,1]]:
-        _ax.set_ylim(-25, 100)
-        _ax.set_xlim(left=1e-1)
+    axs[1,0].set_ylim(-15, 75)
+    axs[1,1].set_ylim(-15, 75)
+    axs[1,1].set_yticks(np.arange(-15, 90, 15))
+    axs[1,1].set_xlim(left=1e-1)
 
     add_zoom_box(axs[0,0],
                  [axs[0,1].get_xlim()[0]*1.015, axs[0,1].get_xlim()[1]*0.95],
@@ -1680,13 +1697,15 @@ def plot_figure_11(ds, microphysics_styles):
 
     add_zoom_box(axs[1,0],
                  [axs[1,1].get_xlim()[0]*1.015, axs[1,1].get_xlim()[1]*0.95],
-                 [axs[1,1].get_ylim()[0]*0.975, axs[1,1].get_ylim()[1]])
+                 [axs[1,1].get_ylim()[0]*0.925, axs[1,1].get_ylim()[1]])
 
     add_zoom_box(axs[1,1],
                  [axs[1,1].get_xlim()[0]*1.015, axs[1,1].get_xlim()[1]*0.975],
-                 [axs[1,1].get_ylim()[0]*0.975, axs[1,1].get_ylim()[1]])
+                 [axs[1,1].get_ylim()[0]*0.925, axs[1,1].get_ylim()[1]])
 
     fig.tight_layout()
+
+    add_subplotlabel(axs=axs.flatten(),  location=[[0.025, -0.05], [0.9, 0.0]])
 
     return fig
 
@@ -1835,7 +1854,7 @@ def plot_figure_appdx_1(ds, ds_sem, microphysics_styles):
 
     return fig
 
-def plot_figure_appdx_2(ds,
+def plot_figure_appdx_3(ds,
                         ds_correlations_EF,
                         ds_correlations_CIE,
                         ds_correlations_MEH,
@@ -1851,7 +1870,8 @@ def plot_figure_appdx_2(ds,
         "cloud_base_height",
     )
     
-    fig, axs = plt.subplots(nrows=3, ncols=len(correlation_vars), figsize=(2 * len(correlation_vars), 7.5))
+    #fig, axs = plt.subplots(nrows=3, ncols=len(correlation_vars), figsize=(2 * len(correlation_vars), 7.5))
+    fig, axs = plt.subplots(nrows=2, ncols=len(correlation_vars), figsize=(2 * len(correlation_vars), 5))
 
     axs_ef: Tuple[plt.Axes, plt.Axes, plt.Axes] = axs[0]
     axs_ef[1].sharey(axs_ef[0])
@@ -1861,9 +1881,9 @@ def plot_figure_appdx_2(ds,
     axs_cie[1].sharey(axs_cie[0])
     axs_cie[2].sharey(axs_cie[1])
 
-    axs_meh: Tuple[plt.Axes, plt.Axes, plt.Axes] = axs[2]
-    axs_meh[1].sharey(axs_meh[0])
-    axs_meh[2].sharey(axs_meh[1])
+    # axs_meh: Tuple[plt.Axes, plt.Axes, plt.Axes] = axs[2]
+    # axs_meh[1].sharey(axs_meh[0])
+    # axs_meh[2].sharey(axs_meh[1])
 
     # for the evaporation fraction
     for i, var in enumerate(correlation_vars):
@@ -1895,32 +1915,33 @@ def plot_figure_appdx_2(ds,
         )
         axs_cie[i].set_xlabel(label_from_attrs(x, name_width=20, linebreak=True))
 
-    axs_cie[0].set_ylabel(label_from_attrs(y, name_width=15, linebreak=True))
+    axs_cie[0].set_ylabel(label_from_attrs(y, name_width=25, linebreak=True))
 
-    # for the mean evaporation height
-    for i, var in enumerate(correlation_vars):
-        y = ds["mean_evaporation_height"].sel(microphysics="condensation")
-        x = ds[var].sel(microphysics="condensation")
-        correlation = ds_correlations_MEH[var].sel(microphysics="condensation")
-        correlation_log = ds_correlations_log_MEH[var].sel(microphysics="condensation")
-        axs_meh[i].set_title("     " + r"$R$" + f"={correlation.data:.2f}")
-        axs_meh[i].scatter(
-            x,
-            y,
-            **microphysics_styles.get_style("condensation"),
-        )
-        axs_meh[i].set_xlabel(label_from_attrs(x, name_width=20, linebreak=True))
+    # # for the mean evaporation height
+    # for i, var in enumerate(correlation_vars):
+    #     y = ds["mean_evaporation_height"].sel(microphysics="condensation")
+    #     x = ds[var].sel(microphysics="condensation")
+    #     correlation = ds_correlations_MEH[var].sel(microphysics="condensation")
+    #     correlation_log = ds_correlations_log_MEH[var].sel(microphysics="condensation")
+    #     axs_meh[i].set_title("     " + r"$R$" + f"={correlation.data:.2f}")
+    #     axs_meh[i].scatter(
+    #         x,
+    #         y,
+    #         **microphysics_styles.get_style("condensation"),
+    #     )
+    #     axs_meh[i].set_xlabel(label_from_attrs(x, name_width=20, linebreak=True))
 
-    axs_meh[0].set_ylabel(label_from_attrs(y, name_width=15))
+    # axs_meh[0].set_ylabel(label_from_attrs(y, name_width=15))
 
 
     for _axs in axs[:, 1:]:
         for _ax in _axs.flatten():
             _ax.set_ylabel("")
-    for _axs in [axs_ef, axs_cie]:
+    for _axs in [axs_ef]:
+    #for _axs in [axs_ef, axs_cie]:
         for _ax in _axs.flatten():
             _ax.set_xlabel("")
-    add_subplotlabel(axs=axs.flatten(), location="title")
+    add_subplotlabel(axs=axs.flatten(), location=[[0.025, -0.05], [1.06, 0.0]])
 
 
     fig.tight_layout()

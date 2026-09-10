@@ -924,7 +924,7 @@ def label_from_attrs(
 
 def add_subplotlabel(
     axs: List[mpl_axes.Axes],
-    location: str = "title",
+    location: str = "title" | List[float],
     labels=string.ascii_lowercase,
     prefix: str = "(",
     suffix: str = ")",
@@ -982,24 +982,28 @@ def add_subplotlabel(
     yoffset = None
     at_title = False
 
-    if "left" in location:
-        xlocation = 0.05
-        xoffset = 0.5
-    elif "right" in location:
-        xlocation = 0.95
-        xoffset = -0.5
-    elif "center" in location:
-        xlocation = 0.5
-        xoffset = 0.0
-    if "upper" in location:
-        ylocation = 0.95
-        yoffset = -0.5
-    elif "lower" in location:
-        ylocation = 0.05
-        yoffset = 0.5
-    elif "middle" in location:
-        ylocation = 0.5
-        yoffset = 0.0
+    if type(location) == list:
+        xlocation, xoffset = location[0]
+        ylocation, yoffset = location[1]
+    else:
+        if "left" in location:
+            xlocation = 0.05
+            xoffset = 0.5
+        elif "right" in location:
+            xlocation = 0.95
+            xoffset = -0.5
+        elif "center" in location:
+            xlocation = 0.5
+            xoffset = 0.0
+        if "upper" in location:
+            ylocation = 0.95
+            yoffset = -0.5
+        elif "lower" in location:
+            ylocation = 0.05
+            yoffset = 0.5
+        elif "middle" in location:
+            ylocation = 0.5
+            yoffset = 0.0
 
     if xlocation == None or ylocation == None:
         if "title" in location:
