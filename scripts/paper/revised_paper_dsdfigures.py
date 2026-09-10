@@ -1,5 +1,6 @@
 # %% Input Settings
 import numpy as np
+import matplotlib.pyplot as plt
 
 from importlib import reload
 from pathlib import Path
@@ -17,7 +18,8 @@ data_dir = RepoPaths.CLEO_data_dir / "output_v4.2"
 data_dir_novent = RepoPaths.CLEO_data_dir / "output_v4.2_novent"
 data_dir_obs = RepoPaths.data_dir / "observation"
 
-fig_dir = RepoPaths.fig_dir / Path("paper-revised") / Path("dsd_plots")
+fig_dir_2 = RepoPaths.fig_dir / Path("paper-revised")
+fig_dir = fig_dir_2 / Path("dsd_plots")
 fig_dir.mkdir(exist_ok=True, parents=False)
 
 yaml = YAML(typ="safe")  # default, if not specfied, is 'rt' (round-trip)
@@ -56,199 +58,36 @@ _, _, extra_ds, \
 clusters2plot = np.random.choice(microphysics_datasets["condensation"].cluster.values, size=10, replace=False)
 # sanity_check_plot(microphysics_datasets_norm, microphysics_styles, extra_ds, clusters2plot=clusters2plot, normheight=True)
 dsdplots.sanity_check_plot(microphysics_datasets, microphysics_styles, extra_ds, clusters2plot=clusters2plot)
+plt.show()
 # %% Select which clouds to plot for example DSDs of effect of collisions
-dsdplots = reload(dsdplots)
 fig, collisions_selected_clusters = dsdplots.select_collisions_diff_clouds(extra_ds_normalized, microphysics_styles)
 save_figure(fig=fig, filepath=fig_dir / "dsd_effect_breakup_selection_criteria")
+plt.show()
 collisions_selected_clusters
-
 # %%
-import matplotlib.pyplot as plt
-
-nlevels = 5
-levels2plot = np.flip(np.linspace(0.0, 1.0, nlevels))
-plot_numconc = False
-
-fig, axes = plt.subplots(nrows=nlevels, ncols=3, figsize=(9, 9), sharex=True, sharey=True)
-
-ds_ref = microphysics_datasets_norm["condensation"]
-
-# plot all clouds' distrib at level 1.0
-if plot_numconc:
-    data = ds_ref.numconc_pdf.sel(level=1.0, method="nearest")
-else:
-    data = ds_ref.massconc_pdf.sel(level=1.0, method="nearest")
-for ax in axes[0,:]:
-    ax.step(ds_ref.centers, data.T, where="mid", color="lightgrey")
-
-for i, (mp, clusters2plot) in enumerate(collisions_selected_clusters.items()):
-    ds = microphysics_datasets_norm[mp]
-    color = microphysics_styles[mp]["dark_color"]
-    for cluster in clusters2plot:
-        for j, h in enumerate(levels2plot):
-            ax = axes[j, i]
-            if plot_numconc:
-                ylabel = "number concentration distribution  / cm$^{-3}$ m$^{-1}$"
-                data_ref = ds_ref.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                data = ds.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-            else:
-                ylabel = "mass concentration distribution / g m$^{-3}$ m$^{-1}$"
-                data_ref = ds_ref.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                data = ds.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-            ax.text(
-                0.02,
-                0.98,
-                f"level={h:.2f}",
-                transform=ax.transAxes,
-                ha="left",
-                va="top",
-            )
-            ax.step(ds.centers, data_ref, where="mid", color=microphysics_styles["condensation"]["dark_color"], alpha=0.5)
-            ax.step(ds.centers, data, where="mid", color=color)
-
-for ax in axes.flatten():
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlim([1e-1, 5e4])
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-for ax in axes[-1,:]:
-    ax.set_xlabel("radius / $\u03BC$m")
-axes[2,0].set_ylabel(ylabel)
-
-axes[0,0].set_title("EvapCoal")
-axes[0,1].set_title("EvapCoalBuRe-few")
-axes[0,2].set_title("EvapCoalBuRe-many")
-
-plt.tight_layout()
+fig = dsdplots.plot_collision_effect_evaporation_dsds(microphysics_datasets_norm, collisions_selected_clusters, microphysics_styles)
 save_figure(fig=fig, filepath=fig_dir / "dsd_effect_breakup")
 plt.show()
 # %% Select which clouds to plot for example DSDs of condensation setup
-def select_condonly_diff_clouds(ds_normalized):
-    plot_limits = {
-        "little_evap" : [0.11, 0.13],  # clusters with any value1 < height evap < any value2
-        "top_heavy": 0.04,  # clusters with any height evap > evap_surface + value
-        "extreme_evap" : 1.25,  # clusters with any height evap > value
-   }
-    selected_clusters = {
-        "little_evap" : [],
-        "top_heavy": [],
-        "extreme_evap" : [],
-   }
-    selected_clusters_colors = {
-        "little_evap" : "mediumseagreen",
-        "top_heavy": "magenta",
-        "extreme_evap" : "midnightblue",
-   }
- 
-    fig = plt.figure(figsize=(16 / 3 * 12 / 8.3, 9 / 3))
-    gs = fig.add_gridspec(nrows=1, ncols=1)
-    ax = fig.add_subplot(gs[:, :])
-
-    mp = "condensation"
-    x = -ds_normalized.sel(microphysics=mp)["evaporation_rate_energy"]
-    y = ds_normalized.sel(microphysics=mp)["normalized_gridbox_coord3"]
-
-    # select all but the top most gridboxes
-    x = x.sel(normalized_gridbox_coord3=slice(0, 0.99))
-    y = y.sel(normalized_gridbox_coord3=slice(0, 0.99))
-    y = y.expand_dims(cloud_id=x["cloud_id"])
-
-    for cloud_id in x["cloud_id"]:
-        xx = np.flip(x.sel(cloud_id=cloud_id).data)
-        yy = np.flip(y.sel(cloud_id=cloud_id).data)
-        xsurf = x.sel(cloud_id=cloud_id, normalized_gridbox_coord3=0).values
-        if (np.any(xx > plot_limits["little_evap"][0]) and np.all(xx < plot_limits["little_evap"][1])):
-            selected_clusters["little_evap"].append(cloud_id)
-            color=selected_clusters_colors["little_evap"]
-            linestyle = "dashdot"
-        elif np.any(xx > plot_limits["extreme_evap"]):
-            selected_clusters["extreme_evap"].append(cloud_id)
-            color=selected_clusters_colors["extreme_evap"]
-            linestyle = "-"
-        elif np.any(xx > xsurf + plot_limits["top_heavy"]):
-            selected_clusters["top_heavy"].append(cloud_id)
-            color=selected_clusters_colors["top_heavy"]
-            linestyle = "--"
-        else:
-            color = "grey"
-            linestyle = "dotted"
-        ax.plot(xx, yy, color=color, linestyle=linestyle)
-
-    y_ticks = np.arange(0, 1.01, 0.25)
-    ax.set_yticks(y_ticks, y_ticks)
-    ax.legend(loc="upper right")
-
-    ax.set_xlim(0, None)
-    ax.set_ylim(0, 1)
-
-    ax.set_ylabel("Normalized Height []")
-    ax.set_xlabel("Evap. Rate W m^-3")
-
-    fig.tight_layout()
-
-    save_figure(fig=fig, filepath=fig_dir / "dsd_different_condevaps_selection_criteria")
-
-    for key, value in selected_clusters.items():
-        selected_clusters[key] = np.asarray(value)
-
-    return selected_clusters, selected_clusters_colors
-condonly_selected_clusters, condonly_selected_clusters_colors = select_condonly_diff_clouds(extra_ds_normalized)
+fig, condonly_selected_clusters, condonly_selected_clusters_colors = dsdplots.select_condonly_diff_clouds(extra_ds_normalized)
+save_figure(fig=fig, filepath=fig_dir / "dsd_different_condevaps_selection_criteria")
+plt.show()
 condonly_selected_clusters
 # %%
-import matplotlib.pyplot as plt
-
-nlevels = 5
-levels2plot = np.flip(np.linspace(0.0, 1.0, nlevels))
-plot_numconc = False
-
-fig, axes = plt.subplots(nrows=nlevels, ncols=1, figsize=(5, 9), sharex=True, sharey=True)
-
-ds = microphysics_datasets_norm["condensation"]
-
-# plot all clouds' distrib at level 1.0
-if plot_numconc:
-    data = ds.numconc_pdf.sel(level=1.0, method="nearest")
-else:
-    data = ds.massconc_pdf.sel(level=1.0, method="nearest")
-axes[0].step(ds.centers, data.T, where="mid", color="lightgrey")
-
-# plot selected clouds' distrib at selected levels
-for j, h in enumerate(levels2plot):
-    for i, (selection, clusters2plot) in enumerate(condonly_selected_clusters.items()):
-        for cluster in clusters2plot:
-            ax = axes[j]
-            if plot_numconc:
-                ylabel = "number concentration distribution  / cm$^{-3}$ m$^{-1}$"
-                data = ds.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-            else:
-                ylabel = "mass concentration distribution / g m$^{-3}$ m$^{-1}$"
-                data = ds.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-            if cluster == clusters2plot[0]:
-                label = selection
-            else:
-                label = None
-            ax.step(ds.centers, data, where="mid", color=condonly_selected_clusters_colors[selection], label=label)
-    ax.text(
-        0.02,
-        0.98,
-        f"level={h:.2f}",
-        transform=ax.transAxes,
-        ha="left",
-        va="top",
-    )
-
-for ax in axes.flatten():
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlim([1e-1, 5e4])
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-axes[0].legend()
-axes[-1].set_xlabel("radius / $\u03BC$m")
-axes[2].set_ylabel(ylabel)
-
-plt.tight_layout()
+fig = dsdplots.plot_bottom_top_heavy_evaporation_dsds(microphysics_datasets_norm, condonly_selected_clusters, condonly_selected_clusters_colors)
 save_figure(fig=fig, filepath=fig_dir / "dsd_different_condevaps")
 plt.show()
+# %%
+fig = dsdplots.plot_figure_appdx_2_version2(microphysics_datasets_norm, extra_ds_normalized, condonly_selected_clusters, condonly_selected_clusters_colors)
+save_figure(fig=fig, filepath=fig_dir_2 / "fig_appdx_2_version2")
+plt.show()
+# %%
+fig = dsdplots.plot_figure_appdx_2(microphysics_datasets_norm, extra_ds_normalized, condonly_selected_clusters)
+save_figure(fig=fig, filepath=fig_dir_2 / "fig_appdx_2")
+plt.show()
+# %%
+fig = dsdplots.plot_figure_appdx_4(microphysics_datasets_norm, extra_ds_normalized, collisions_selected_clusters, microphysics_styles)
+save_figure(fig=fig, filepath=fig_dir_2 / "fig_appdx_4")
+plt.show()
+
 # %%
