@@ -648,12 +648,12 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
     plot_numconc = False
 
     fig = plt.figure(figsize=[9, 12], layout="constrained")
-    gs = GridSpec(nlevels+1, 4, figure=fig, height_ratios=[1.3]+[1]*nlevels)
-    axes0 = [fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[0, 2]), fig.add_subplot(gs[0, 3])]
-    selection_axes = {'condensation': [fig.add_subplot(gs[n+1, 0]) for n in range(nlevels)],
-            'collision_condensation': [fig.add_subplot(gs[n+1, 1]) for n in range(nlevels)],
-            'coalbure_condensation_small': [fig.add_subplot(gs[n+1, 2]) for n in range(nlevels)],
-            'coalbure_condensation_large': [fig.add_subplot(gs[n+1, 3]) for n in range(nlevels)],
+    gs = GridSpec(nlevels+1, 3, figure=fig, height_ratios=[1.3]+[1]*nlevels)
+    axes0 = [fig.add_subplot(gs[0, n]) for n in range(3)]
+    selection_axes = {
+            'collision_condensation': [fig.add_subplot(gs[n+1, 0]) for n in range(nlevels)],
+            'coalbure_condensation_small': [fig.add_subplot(gs[n+1, 1]) for n in range(nlevels)],
+            'coalbure_condensation_large': [fig.add_subplot(gs[n+1, 2]) for n in range(nlevels)],
             }
 
     for _ax, mp in zip(axes0, [
@@ -678,7 +678,8 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
     for axs in selection_axes.values():
         axs[0].step(ds_ref.centers, data.T, where="mid", color="lightgrey")
 
-    for i, (mp, clusters2plot) in enumerate(collisions_selected_clusters.items()):
+    for mp in selection_axes.keys():
+        clusters2plot = collisions_selected_clusters[mp]
         ds = microphysics_datasets_norm[mp]
         color = microphysics_styles[mp]["dark_color"]
         for cluster in clusters2plot:
@@ -700,7 +701,9 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
                     ha="left",
                     va="top",
                 )
-                ax.step(ds.centers, data_ref, where="mid", color=microphysics_styles["condensation"]["dark_color"], alpha=0.3, linestyle="dotted")
+                ax.step(ds.centers, data_ref, where="mid",
+                        color=microphysics_styles["condensation"]["dark_color"],
+                        alpha=0.8, linestyle="dotted")
                 ax.step(ds.centers, data, where="mid", color=color)
 
     for axs in selection_axes.values():
@@ -713,14 +716,13 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
             ax.spines["right"].set_visible(False)
         axs[-1].set_xlabel("radius / $\u03BC$m")
     
-    selection_axes["condensation"][0].set_title("EvapOnly", color=microphysics_styles["condensation"]["dark_color"])
-    selection_axes["condensation"][2].set_ylabel(ylabel)
+    selection_axes["collision_condensation"][2].set_ylabel(ylabel)
 
     axes_list = axes0
-    for axs in selection_axes.values():
-        for ax in axs:
-            axes_list.append(ax)
-    add_subplotlabel(axs=axes_list, location=[[-0.25, -0.05], [1.06, 0.0]])
+    for j in range(len(levels2plot)):
+        for axs in selection_axes.values():
+            axes_list.append(axs[j])
+    add_subplotlabel(axs=axes_list, location=[[-0.1, -0.05], [1.06, 0.0]])
 
     plt.tight_layout()
 
