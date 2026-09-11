@@ -2,11 +2,11 @@
 condonly_plot_limits = {
     "random_sample": [],
     ### limits for 3 clouds selected in each category
-    "little_evap" : [0.11, 0.119],  # clusters with any value1 < height evap < any value2
+    "little_evap" : [0.03, 0.06],  # clusters with any value1 < height evap < any value2
     "top_heavy": 0.055,  # clusters with any height evap > evap_surface + value
     "extreme_evap" : 1.345,  # clusters with any height evap > value
     ### limits for 5 clouds selected in each category
-    # "little_evap" : [0.11, 0.13],  # clusters with any value1 < height evap < any value2
+    # "little_evap" : [0.03, 0.075],  # clusters with any value1 < height evap < any value2
     # "top_heavy": 0.04,  # clusters with any height evap > evap_surface + value
     # "extreme_evap" : 1.25,  # clusters with any height evap > value
 }
