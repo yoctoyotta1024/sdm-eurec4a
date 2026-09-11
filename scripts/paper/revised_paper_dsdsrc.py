@@ -626,9 +626,9 @@ def plot_figure_appdx_2(microphysics_datasets_norm, ds_normalized, condonly_sele
     selection_axes["random_sample"][2].set_ylabel(ylabel)
 
     axes_list = [ax0]
-    for axs in selection_axes.values():
-        for ax in axs:
-            axes_list.append(ax)
+    for j in range(len(levels2plot)):
+        for axs in selection_axes.values():
+            axes_list.append(axs[j])
     add_subplotlabel(axs=axes_list, location=[[-0.1, -0.05], [1.06, 0.0]])
 
     plt.tight_layout()
