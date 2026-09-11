@@ -1,6 +1,5 @@
 ### script adapted from ``./notebooks/paper/17-NN-figure-review-version.ipynb``
 # %% Imports
-import numpy as np
 import xarray as xr
 
 from importlib import reload
@@ -9,12 +8,6 @@ from pathlib import Path
 from sdm_eurec4a import RepositoryPath
 from sdm_eurec4a import data_loading
 from sdm_eurec4a.visulization import (
-    set_paper_rcParams,
-    adjust_lightness_array,
-    adjust_lightness,
-    label_from_attrs,
-    add_additional_axis,
-    add_subplotlabel,
     save_figure,
 )
 
@@ -34,8 +27,6 @@ data_dir_novent = Path("/work/mh1126/m300950/rain-evap-nils/sdm-eurec4a-CLEO/dat
 
 fig_dir = RepoPaths.fig_dir / Path("paper-revised")
 fig_dir.mkdir(exist_ok=True, parents=False)
-appendix_fig_dir = fig_dir / "appendix"
-appendix_fig_dir.mkdir(exist_ok=True, parents=False)
 
 print(f"Using data from {data_dir}")
 print(f"data_dir_novent: {data_dir_novent}")
