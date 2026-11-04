@@ -645,17 +645,53 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
 
     from sdm_eurec4a.visulization import add_subplotlabel
 
+    def plot_distrib_on_axes(sel_axes, add_text=True):
+        for mp in sel_axes.keys():
+            clusters2plot = collisions_selected_clusters[mp]
+            ds = microphysics_datasets_norm[mp]
+            color = microphysics_styles[mp]["dark_color"]
+            radius_mm = ds.centers / 1e3
+            for cluster in clusters2plot:
+                for j, h in enumerate(levels2plot):
+                    ax = sel_axes[mp][j]
+                    if plot_numconc:
+                        data_ref = ds_ref.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
+                        data = ds.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
+                    else:
+                        data_ref = ds_ref.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
+                        data = ds.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
+                    ax.step(radius_mm, data_ref, where="mid",
+                            color=microphysics_styles["condensation"]["dark_color"],
+                            alpha=0.8, linestyle="dotted")
+                    ax.step(radius_mm, data, where="mid", color=color)
+                    if add_text:
+                        ax.text(
+                            0.015,
+                            0.98,
+                            f"level={h:.2f}",
+                            transform=ax.transAxes,
+                            ha="left",
+                        va="top",
+                        )
+
     nlevels = 5
     levels2plot = np.flip(np.linspace(0.0, 1.0, nlevels))
     plot_numconc = False
 
-    fig = plt.figure(figsize=[9, 12], layout="constrained")
-    gs = GridSpec(nlevels+1, 3, figure=fig, height_ratios=[1.3]+[1]*nlevels)
-    axes0 = [fig.add_subplot(gs[0, n]) for n in range(3)]
+    fig = plt.figure(figsize=[13, 12], layout="constrained")
+    gs = GridSpec(nlevels+1, 9, figure=fig, height_ratios=[1.3]+[1]*nlevels,
+                  width_ratios=[1, 0.5, 0.01]*3)
+    axes0 = [fig.add_subplot(gs[0, 3*n:3*n+3]) for n in range(3)]
     selection_axes = {
             'collision_condensation': [fig.add_subplot(gs[n+1, 0]) for n in range(nlevels)],
-            'coalbure_condensation_small': [fig.add_subplot(gs[n+1, 1]) for n in range(nlevels)],
-            'coalbure_condensation_large': [fig.add_subplot(gs[n+1, 2]) for n in range(nlevels)],
+            'coalbure_condensation_small': [fig.add_subplot(gs[n+1, 3]) for n in range(nlevels)],
+            'coalbure_condensation_large': [fig.add_subplot(gs[n+1, 6]) for n in range(nlevels)],
+            }
+
+    selection_axes_zoom = {
+            'collision_condensation': [fig.add_subplot(gs[n+1, 1]) for n in range(nlevels)],
+            'coalbure_condensation_small': [fig.add_subplot(gs[n+1, 4]) for n in range(nlevels)],
+            'coalbure_condensation_large': [fig.add_subplot(gs[n+1, 7]) for n in range(nlevels)],
             }
 
     for _ax, mp in zip(axes0, [
@@ -681,46 +717,30 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
     for axs in selection_axes.values():
         axs[0].step(radius_ref_mm, data.T, where="mid", color="lightgrey")
 
-    for mp in selection_axes.keys():
-        clusters2plot = collisions_selected_clusters[mp]
-        ds = microphysics_datasets_norm[mp]
-        color = microphysics_styles[mp]["dark_color"]
-        radius_mm = ds.centers / 1e3
-        for cluster in clusters2plot:
-            for j, h in enumerate(levels2plot):
-                ax = selection_axes[mp][j]
-                if plot_numconc:
-                    ylabel = "number concentration distribution  / cm$^{-3}$ m$^{-1}$"
-                    data_ref = ds_ref.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                    data = ds.numconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                else:
-                    ylabel = "mass concentration distribution / g m$^{-3}$ m$^{-1}$"
-                    data_ref = ds_ref.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                    data = ds.massconc_pdf.sel(cluster=cluster).sel(level=h, method="nearest")
-                ax.text(
-                    0.015,
-                    0.98,
-                    f"level={h:.2f}",
-                    transform=ax.transAxes,
-                    ha="left",
-                    va="top",
-                )
-                ax.step(radius_mm, data_ref, where="mid",
-                        color=microphysics_styles["condensation"]["dark_color"],
-                        alpha=0.8, linestyle="dotted")
-                ax.step(radius_mm, data, where="mid", color=color)
+    plot_distrib_on_axes(selection_axes, add_text=True)
+    plot_distrib_on_axes(selection_axes_zoom, add_text=False)
 
     for axs in selection_axes.values():
         for ax in axs:
-            # ax.set_xscale("log")
-            # ax.set_yscale("log")
-            #ax.set_xlim([1e-4, 5e1])
-            ax.set_xlim([0.0, 1e0])
-            # ax.set_ylim([1e-9, 5e3])
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.set_xlim([1e-4, 5e1])
+            ax.set_ylim([1e-9, 5e3])
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
         axs[-1].set_xlabel("radius / mm")
-    
+
+    for axs in selection_axes_zoom.values():
+        for ax in axs:
+            ax.set_xlim([0.0, 1e0])
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
+        axs[-1].set_xlabel("radius / mm")
+
+    if plot_numconc:
+        ylabel = "number concentration distribution  / cm$^{-3}$ m$^{-1}$"
+    else:
+        ylabel = "mass concentration distribution / g m$^{-3}$ m$^{-1}$" 
     selection_axes["collision_condensation"][2].set_ylabel(ylabel)
 
     axes_list = axes0
@@ -729,7 +749,7 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
             axes_list.append(axs[j])
     add_subplotlabel(axs=axes_list, location=[[-0.1, -0.05], [1.06, 0.0]])
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     return fig
 # %%
