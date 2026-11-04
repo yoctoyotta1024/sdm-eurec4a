@@ -712,10 +712,11 @@ def plot_figure_appdx_4(microphysics_datasets_norm, ds_normalized, collisions_se
 
     for axs in selection_axes.values():
         for ax in axs:
-            ax.set_xscale("log")
-            ax.set_yscale("log")
-            ax.set_xlim([1e-4, 5e1])
-            ax.set_ylim([1e-9, 5e3])
+            # ax.set_xscale("log")
+            # ax.set_yscale("log")
+            #ax.set_xlim([1e-4, 5e1])
+            ax.set_xlim([0.0, 1e0])
+            # ax.set_ylim([1e-9, 5e3])
             ax.spines["top"].set_visible(False)
             ax.spines["right"].set_visible(False)
         axs[-1].set_xlabel("radius / mm")
